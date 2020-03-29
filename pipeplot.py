@@ -142,15 +142,17 @@ def main(args):
                 line = sys.stdin.readline()
             except IOError as exc:
                 if exc.errno == 11:
+                    time.sleep(0.1)
                     continue
                 raise
             if not line:
+                time.sleep(0.1)
                 continue
             value = float(line)
             plot.append(value)
             max_y, max_x = curses_context.stdscr.getmaxyx()
             plot.draw(max_x, max_y - 1)
-            time.sleep(1)
+            time.sleep(0.1)
 
 
 if __name__ == '__main__':
