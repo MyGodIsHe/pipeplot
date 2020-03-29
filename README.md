@@ -1,7 +1,7 @@
-#Pipe Plot
+# Pipe Plot
 pipeplot draws a graph in a terminal based on data from pipe. 
 
-##Installation
+## Installation
 ```bash
 pip install pipeplot
 ```
