@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import argparse
 import collections
+import curses
 import fcntl
-import locale
-
 import itertools
+import locale
 import os
 import sys
 import time
-import curses
 
 
 class CursesContext:
@@ -16,7 +16,6 @@ class CursesContext:
         self.stdscr = None
 
     def __enter__(self):
-        locale.setlocale(locale.LC_ALL, '')
         self.stdscr = curses.initscr()
         self.stdscr.keypad(1)
         curses.noecho()
@@ -38,12 +37,23 @@ class CursesContext:
 
 
 class PlotWidget:
-    def __init__(self, stdscr):
+    def __init__(self, stdscr, color, symbol, border):
         self.stdscr = stdscr
         self._queue = collections.deque(maxlen=1000)
-        self.color = curses.color_pair(2)
+        self.color = curses.color_pair(color)
+        self.symbol = symbol
+        self.border = border
+        self.min_value = None
+        self.max_value = None
 
     def append(self, value):
+        if self.min_value is None:
+            self.min_value = self.max_value = value
+        else:
+            if self.min_value > value:
+                self.min_value = value
+            elif self.max_value < value:
+                self.max_value = value
         self._queue.appendleft(value)
 
     def draw(self, width, height):
@@ -52,8 +62,12 @@ class PlotWidget:
         values = list(itertools.islice(self._queue, 1, width + 1))
         if not values:
             return
-        min_value = min(values)
-        max_value = max(values)
+
+        if self.border == 'window':
+            min_value, max_value = min(values), max(values)
+        else:
+            min_value, max_value = self.min_value, self.max_value
+
         if max_value == min_value:
             height_k = 1
         else:
@@ -64,7 +78,7 @@ class PlotWidget:
             for y in range(0, value_height):
                 self.clear_char(x, y)
             for y in range(value_height, height + 1):
-                self.add_str(x, y, '█', self.color)
+                self.add_str(x, y, self.symbol, self.color)
 
         stats_box = [
             'Max: {:6.2f}'.format(max_value),
@@ -91,14 +105,37 @@ class PlotWidget:
             pass
 
 
-def main():
+def perfect_symbol(char):
+    code = locale.getpreferredencoding()
+    try:
+        decoded_char = char.decode(code)
+    except AttributeError:
+        decoded_char = char
+    if len(decoded_char) != 1:
+        raise argparse.ArgumentTypeError('only one')
+    return char
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Displays a graph based on data from the pipe.'
+    )
+    parser.add_argument('--color', default=2, type=int)
+    parser.add_argument('--symbol', default='█', type=perfect_symbol)
+    parser.add_argument('--border', default='all', choices=['all', 'window'])
+    return parser.parse_args()
+
+
+def main(args):
     # init non-blocking stdin
     fd = sys.stdin.fileno()
     fl = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
     with CursesContext() as curses_context:
-        plot = PlotWidget(curses_context.stdscr)
+        plot = PlotWidget(
+            curses_context.stdscr, args.color, args.symbol, args.border,
+        )
 
         while True:
             try:
@@ -113,12 +150,14 @@ def main():
             plot.append(value)
             max_y, max_x = curses_context.stdscr.getmaxyx()
             plot.draw(max_x, max_y - 1)
-            time.sleep(1)
+            time.sleep(0.1)
 
 
 if __name__ == '__main__':
+    locale.setlocale(locale.LC_ALL, '')
     try:
-        main()
+        args = parse_args()
+        main(args)
     except KeyboardInterrupt:
         pass
     except ValueError as exc:
