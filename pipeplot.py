@@ -150,7 +150,7 @@ def main(args):
             plot.append(value)
             max_y, max_x = curses_context.stdscr.getmaxyx()
             plot.draw(max_x, max_y - 1)
-            time.sleep(0.1)
+            time.sleep(1)
 
 
 if __name__ == '__main__':
