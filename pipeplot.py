@@ -11,6 +11,9 @@ import sys
 import time
 
 
+__version__ = '0.1.0'
+
+
 class CursesContext:
     def __init__(self):
         self.stdscr = None
@@ -155,7 +158,7 @@ def main(args):
             time.sleep(0.1)
 
 
-if __name__ == '__main__':
+def run():
     locale.setlocale(locale.LC_ALL, '')
     try:
         args = parse_args()
