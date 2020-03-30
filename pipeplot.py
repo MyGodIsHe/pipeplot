@@ -11,7 +11,7 @@ import sys
 import time
 
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 
 class CursesContext:
@@ -40,6 +40,9 @@ class CursesContext:
 
 
 class PlotWidget:
+    STATS_FLOAT_FORMAT = r'{:6.2f}'
+    STATS_INT_FORMAT = r'{:6d}'
+
     def __init__(self, stdscr, color, symbol, border):
         self.stdscr = stdscr
         self._queue = collections.deque(maxlen=1000)
@@ -48,8 +51,10 @@ class PlotWidget:
         self.border = border
         self.min_value = None
         self.max_value = None
+        self.is_natural = None
 
     def append(self, value):
+        self.is_natural = value % 1 == 0.0
         if self.min_value is None:
             self.min_value = self.max_value = value
         else:
@@ -62,9 +67,10 @@ class PlotWidget:
     def draw(self, width, height):
         if not width or not height:
             return
-        values = list(itertools.islice(self._queue, 1, width + 1))
+        values = list(itertools.islice(self._queue, 0, width))
         if not values:
             return
+        current_value = values[0]
 
         if self.border == 'window':
             min_value, max_value = min(values), max(values)
@@ -72,28 +78,43 @@ class PlotWidget:
             min_value, max_value = self.min_value, self.max_value
 
         if max_value == min_value:
-            height_k = 1
+            # draw middle value
+            height_k = height
+            values[0] += 0.5
         else:
             height_k = height / (max_value - min_value)
 
+        self.add_plot(values, height, height_k, min_value)
+        self.add_stats(width, height, min_value, current_value, max_value)
+
+        self.stdscr.refresh()
+
+    def add_plot(self, values, height, height_k, min_value):
         for x, value in enumerate(values):
-            value_height = height - int((value - min_value) * height_k)
-            for y in range(0, value_height):
+            value = int((value - min_value) * height_k)
+            value = height - value
+            for y in range(0, value):
                 self.clear_char(x, y)
-            for y in range(value_height, height + 1):
+            for y in range(value, height + 1):
                 self.add_str(x, y, self.symbol, self.color)
 
+    def add_stats(self, width, height, min_value, current_value, max_value):
+        if self.is_natural:
+            stats_format = self.STATS_INT_FORMAT
+            max_value = int(max_value)
+            current_value = int(current_value)
+            min_value = int(min_value)
+        else:
+            stats_format = self.STATS_FLOAT_FORMAT
         stats_box = [
-            'Max: {:6.2f}'.format(max_value),
-            'Cur: {:6.2f}'.format(values[0]),
-            'Min: {:6.2f}'.format(min_value),
+            ('Max: ' + stats_format).format(max_value),
+            ('Cur: ' + stats_format).format(current_value),
+            ('Min: ' + stats_format).format(min_value),
         ]
         offset_x = int((width - max(len(line) for line in stats_box)) / 2)
         offset_y = int((height - len(stats_box)) / 2)
         for y, line in enumerate(stats_box):
             self.add_str(offset_x, offset_y + y, line, curses.color_pair(0))
-
-        self.stdscr.refresh()
 
     def clear_char(self, x, y):
         try:
@@ -154,7 +175,7 @@ def main(args):
             value = float(line)
             plot.append(value)
             max_y, max_x = curses_context.stdscr.getmaxyx()
-            plot.draw(max_x, max_y - 1)
+            plot.draw(max_x, max_y)
             time.sleep(0.1)
 
 
