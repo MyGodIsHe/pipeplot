@@ -19,14 +19,9 @@ def get_version(filename):
     raise RuntimeError("Unable to find version string.")
 
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
-
-
 setup(
     name='pipeplot',
-    description='displays a graph based on data from the pipe.',
-    long_description=long_description,
+    description='displays an interactive graph based on data from pipe',
     version=get_version('pipeplot.py'),
     license='MIT',
     author='Ilya Chistyakov',
@@ -52,6 +47,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
     ],
+    url='https://github.com/MyGodIsHe/pipeplot',
     project_urls={
         'Source': 'https://github.com/MyGodIsHe/pipeplot',
     },
