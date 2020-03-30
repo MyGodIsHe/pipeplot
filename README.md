@@ -17,5 +17,5 @@ while true; do curl -s https://coronavirus-19-api.herokuapp.com/all | jq '.death
 ```
 ### Render graphite to console:
 ```bash
-while sleep 5; do curl -s 'http://graphite/render?target=my_app_rps_error&format=json&from=-5min&until=now&maxDataPoints=495' | jq -c '.[0].datapoints[-1]'; done | sed -u s/null/0/ | stdbuf -oL uniq | stdbuf -oL jq '.[0]' | pipeplot
+while sleep 5; do curl -s 'http://graphite/render?target=my_app_rps_error&format=json&from=-5min&until=now' | jq -c '.[0].datapoints[-1]'; done | sed -u s/null/0/ | stdbuf -oL uniq | stdbuf -oL jq '.[0]' | pipeplot
 ```
