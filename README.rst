@@ -39,4 +39,13 @@ Render graphite to console:
 
 .. code-block:: bash
 
-    while true; do curl -s 'http://graphite/render?target=my_app_rps_error&format=json&from=-5min&until=now' | jq -c '.[0].datapoints[-1]'; sleep 5; done | sed -u s/null/0/ | stdbuf -oL uniq | stdbuf -oL jq '.[0]' | pipeplot
+    while true; \
+    do \
+        curl -s 'http://graphite/render?target=my_app_rps_error&format=json&from=-5min&until=now' \
+        | jq -c '.[0].datapoints[-1]'; \
+        sleep 5; \
+    done \
+    | sed -u s/null/0/ \
+    | stdbuf -oL uniq \
+    | stdbuf -oL jq '.[0]' \
+    | pipeplot
