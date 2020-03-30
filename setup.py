@@ -19,9 +19,14 @@ def get_version(filename):
     raise RuntimeError("Unable to find version string.")
 
 
+with open("README.rst", "r") as fh:
+    long_description = fh.read()
+
+
 setup(
     name='pipeplot',
     description='displays an interactive graph based on data from pipe',
+    long_description=long_description,
     version=get_version('pipeplot.py'),
     license='MIT',
     author='Ilya Chistyakov',
