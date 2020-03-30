@@ -81,7 +81,7 @@ class PlotWidget:
         if max_value == min_value:
             # draw middle value
             height_k = height
-            values[0] += 0.5
+            values = [0.5] * len(values)
         else:
             height_k = height / (max_value - min_value)
 
