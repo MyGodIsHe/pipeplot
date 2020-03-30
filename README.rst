@@ -33,7 +33,12 @@ Chart of deaths per minute from coronavirus:
 
 .. code-block:: bash
 
-    while true; do curl -s https://coronavirus-19-api.herokuapp.com/all | jq '.deaths'; sleep 60; done | pipeplot
+    while true; \
+        do curl -s https://coronavirus-19-api.herokuapp.com/all \
+        | jq '.deaths'; \
+        sleep 60; \
+    done \
+    | pipeplot --color 1
 
 Render graphite to console:
 
