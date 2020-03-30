@@ -11,7 +11,7 @@ import sys
 import time
 
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 
 class CursesContext:
@@ -51,10 +51,11 @@ class PlotWidget:
         self.border = border
         self.min_value = None
         self.max_value = None
-        self.is_natural = None
+        self.is_natural = True
 
     def append(self, value):
-        self.is_natural = value % 1 == 0.0
+        if self.is_natural:
+            self.is_natural = value % 1 == 0.0
         if self.min_value is None:
             self.min_value = self.max_value = value
         else:
