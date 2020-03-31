@@ -8,7 +8,7 @@ Pipe Plot
     :target: https://pypi.org/project/pipeplot/
 
 .. image:: https://img.shields.io/pypi/dm/pipeplot.svg
-    :target: https://pypi.python.org/pypi/pipeplot
+    :target: https://pypistats.org/packages/pipeplot
 
 pipeplot draws an interactive graph in a terminal based on data from pipe.
 
