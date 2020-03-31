@@ -23,7 +23,7 @@ Installation
 Examples of using
 =================
 
-Graphical Ping:
+Graphical ping:
 
 .. code-block:: bash
 
@@ -38,7 +38,7 @@ Chart of deaths per minute from coronavirus:
         | jq '.deaths'; \
         sleep 60; \
     done \
-    | pipeplot --color 1
+    | pipeplot --color 1 --direction left
 
 Render graphite to console:
 

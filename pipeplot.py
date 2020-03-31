@@ -11,7 +11,7 @@ import sys
 import time
 
 
-__version__ = '0.2.1'
+__version__ = '0.3.0'
 
 
 class CursesContext:
@@ -58,21 +58,23 @@ class PlotWidget:
             color,
             symbol,
             symbol_size,
-            border,
+            scale,
             fixed_min,
             fixed_max,
+            direction,
     ):
         self.stdscr = stdscr
         self._queue = collections.deque(maxlen=1000)
         self.color = curses.color_pair(color)
         self.symbol = symbol
         self.symbol_size = symbol_size
-        self.border = border
+        self.scale = scale
         self.min_value = None
         self.max_value = None
         self.fixed_min = fixed_min
         self.fixed_max = fixed_max
         self.is_natural = True
+        self.direction = direction
 
     def append(self, value):
         if self.is_natural:
@@ -94,16 +96,16 @@ class PlotWidget:
             return
         current_value = values[0]
 
-        if self.border == 'window':
+        if self.scale == 'window':
             min_value, max_value = min(values), max(values)
         else:
             min_value, max_value = self.min_value, self.max_value
 
-        self.add_plot(values, height, min_value, max_value)
+        self.add_plot(values, width, height, min_value, max_value)
         self.add_stats(width, height, min_value, current_value, max_value)
         self.stdscr.refresh()
 
-    def add_plot(self, values, height, min_value, max_value):
+    def add_plot(self, values, width, height, min_value, max_value):
         if self.fixed_min is not None:
             min_value = self.fixed_min
         if self.fixed_max is not None:
@@ -118,6 +120,8 @@ class PlotWidget:
 
         for x, value in enumerate(values):
             x *= self.symbol_size
+            if self.direction == 'left':
+                x = width - x
             value = int((value - min_value) * height_k)
             value = height - value
             for y in range(0, value):
@@ -168,7 +172,10 @@ def parse_args():
     )
     parser.add_argument('--color', default=2, type=int)
     parser.add_argument('--symbol', default='█', type=perfect_symbol)
-    parser.add_argument('--border', default='all', choices=['all', 'window'])
+    parser.add_argument('--scale', default='all', choices=['all', 'window'])
+    parser.add_argument(
+        '--direction', default='right', choices=['left', 'right'],
+    )
     parser.add_argument('--min', type=float)
     parser.add_argument('--max', type=float)
     return parser.parse_args()
@@ -187,9 +194,10 @@ def main(args):
             args.color,
             args.symbol,
             symbol_size,
-            args.border,
+            args.scale,
             args.min,
             args.max,
+            args.direction,
         )
 
         while True:
