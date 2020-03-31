@@ -23,7 +23,7 @@ Installation
 Examples of using
 =================
 
-Ping like gping:
+Graphical Ping:
 
 .. code-block:: bash
 
