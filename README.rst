@@ -27,7 +27,7 @@ Ping like gping:
 
 .. code-block:: bash
 
-    ping ya.ru | grep --line-buffered time | sed -u -e 's#.*time=\([^ ]*\).*#\1#' | pipeplot
+    ping ya.ru | grep --line-buffered time | sed -u -e 's#.*time=\([^ ]*\).*#\1#' | pipeplot --min 0
 
 Chart of deaths per minute from coronavirus:
 
