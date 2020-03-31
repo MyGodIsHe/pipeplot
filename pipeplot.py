@@ -11,7 +11,7 @@ import sys
 import time
 
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 
 class CursesContext:
@@ -20,7 +20,8 @@ class CursesContext:
 
     def __enter__(self):
         self.stdscr = curses.initscr()
-        self.stdscr.keypad(1)
+        self.stdscr.keypad(True)
+        self.stdscr.leaveok(False)
         curses.noecho()
         curses.cbreak()
         curses.curs_set(0)
@@ -32,22 +33,40 @@ class CursesContext:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.stdscr:
-            self.stdscr.keypad(0)
+            self.stdscr.keypad(False)
             curses.echo()
             curses.nocbreak()
             curses.endwin()
             self.stdscr = None
+
+    def get_symbol_size(self, symbol):
+        curses.curs_set(2)
+        curses.setsyx(0, 0)
+        self.stdscr.addstr(symbol)
+        self.stdscr.refresh()
+        curses.curs_set(0)
+        return curses.getsyx()[1]
 
 
 class PlotWidget:
     STATS_FLOAT_FORMAT = r'{:6.2f}'
     STATS_INT_FORMAT = r'{:6d}'
 
-    def __init__(self, stdscr, color, symbol, border, fixed_min, fixed_max):
+    def __init__(
+            self,
+            stdscr,
+            color,
+            symbol,
+            symbol_size,
+            border,
+            fixed_min,
+            fixed_max,
+    ):
         self.stdscr = stdscr
         self._queue = collections.deque(maxlen=1000)
         self.color = curses.color_pair(color)
         self.symbol = symbol
+        self.symbol_size = symbol_size
         self.border = border
         self.min_value = None
         self.max_value = None
@@ -98,6 +117,7 @@ class PlotWidget:
             height_k = height / (max_value - min_value)
 
         for x, value in enumerate(values):
+            x *= self.symbol_size
             value = int((value - min_value) * height_k)
             value = height - value
             for y in range(0, value):
@@ -125,7 +145,7 @@ class PlotWidget:
 
     def clear_char(self, x, y):
         try:
-            self.stdscr.addstr(y, x, ' ')
+            self.stdscr.addstr(y, x, ' ' * self.symbol_size)
         except curses.error:
             pass
 
@@ -137,13 +157,8 @@ class PlotWidget:
 
 
 def perfect_symbol(char):
-    code = locale.getpreferredencoding()
-    try:
-        decoded_char = char.decode(code)
-    except AttributeError:
-        decoded_char = char
-    if len(decoded_char) != 1:
-        raise argparse.ArgumentTypeError('only one')
+    if not char:
+        raise argparse.ArgumentTypeError('not empty')
     return char
 
 
@@ -166,10 +181,12 @@ def main(args):
     fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
     with CursesContext() as curses_context:
+        symbol_size = curses_context.get_symbol_size(args.symbol)
         plot = PlotWidget(
             curses_context.stdscr,
             args.color,
             args.symbol,
+            symbol_size,
             args.border,
             args.min,
             args.max,
