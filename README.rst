@@ -1,5 +1,5 @@
 Pipe Plot
-=========
+#########
 
 .. image:: https://img.shields.io/pypi/v/pipeplot.svg
     :target: https://pypi.org/project/pipeplot/
@@ -8,12 +8,12 @@ Pipe Plot
     :target: https://pypi.org/project/pipeplot/
 
 .. image:: https://img.shields.io/pypi/dm/pipeplot.svg
-    :target: https://pypi.python.org/pypi/pipeplot
+    :target: https://pypistats.org/packages/pipeplot
 
 pipeplot draws an interactive graph in a terminal based on data from pipe.
 
 Installation
-============
+************
 
 .. code-block:: bash
 
@@ -21,15 +21,17 @@ Installation
 
 
 Examples of using
-=================
+*****************
 
 Graphical ping:
+"""""""""""""""
 
 .. code-block:: bash
 
     ping ya.ru | grep --line-buffered time | sed -u -e 's#.*time=\([^ ]*\).*#\1#' | pipeplot --min 0
 
 Chart of deaths per minute from coronavirus:
+"""""""""""""""
 
 .. code-block:: bash
 
@@ -40,7 +42,10 @@ Chart of deaths per minute from coronavirus:
     done \
     | pipeplot --color 1 --direction left
 
+API: https://github.com/javieraviles/covidAPI
+
 Render graphite to console:
+"""""""""""""""
 
 .. code-block:: bash
 
