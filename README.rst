@@ -12,6 +12,8 @@ Pipe Plot
 
 pipeplot draws an interactive graph in a terminal based on data from pipe.
 
+.. image:: https://raw.githubusercontent.com/MyGodIsHe/pipeplot/master/doc/readme_screencast.gif
+
 Installation
 ************
 
