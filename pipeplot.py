@@ -204,7 +204,7 @@ def main(args):
             try:
                 line = sys.stdin.readline()
             except IOError as exc:
-                if exc.errno == 11:
+                if exc.strerror == 'Resource temporarily unavailable':
                     time.sleep(0.1)
                     continue
                 raise
