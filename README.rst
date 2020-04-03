@@ -33,7 +33,7 @@ Graphical ping:
     ping ya.ru | grep --line-buffered time | sed -u -e 's#.*time=\([^ ]*\).*#\1#' | pipeplot --min 0
 
 Chart of deaths per minute from coronavirus:
-"""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""
 
 .. code-block:: bash
 
@@ -47,7 +47,7 @@ Chart of deaths per minute from coronavirus:
 API: https://github.com/javieraviles/covidAPI
 
 Render graphite to console:
-"""""""""""""""
+"""""""""""""""""""""""""""
 
 .. code-block:: bash
 

@@ -3,6 +3,7 @@
 import argparse
 import collections
 import curses
+import errno
 import fcntl
 import itertools
 import locale
@@ -11,7 +12,7 @@ import sys
 import time
 
 
-__version__ = '0.3.0'
+__version__ = '0.3.2'
 
 
 class CursesContext:
@@ -204,13 +205,12 @@ def main(args):
             try:
                 line = sys.stdin.readline()
             except IOError as exc:
-                if exc.strerror == 'Resource temporarily unavailable':
+                if exc.errno == errno.EAGAIN:
                     time.sleep(0.1)
                     continue
                 raise
             if not line:
-                time.sleep(0.1)
-                continue
+                break
             value = float(line)
             plot.append(value)
             max_y, max_x = curses_context.stdscr.getmaxyx()
