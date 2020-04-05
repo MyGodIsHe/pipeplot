@@ -182,6 +182,31 @@ def parse_args():
     return parser.parse_args()
 
 
+def stdin_iter_py2():
+    while True:
+        try:
+            line = sys.stdin.readline().strip()
+        except IOError as exc:
+            if exc.errno == errno.EAGAIN:
+                time.sleep(0.1)
+                continue
+            raise
+        if not line:
+            break
+        value = float(line)
+        yield value
+        time.sleep(0.1)
+
+
+def stdin_iter_py3():
+    while True:
+        line = sys.stdin.readline().strip()
+        if line:
+            value = float(line)
+            yield value
+        time.sleep(0.1)
+
+
 def main(args):
     # init non-blocking stdin
     fd = sys.stdin.fileno()
@@ -201,21 +226,15 @@ def main(args):
             args.direction,
         )
 
-        while True:
-            try:
-                line = sys.stdin.readline()
-            except IOError as exc:
-                if exc.errno == errno.EAGAIN:
-                    time.sleep(0.1)
-                    continue
-                raise
-            if not line:
-                break
-            value = float(line)
+        if sys.version_info.major == 2:
+            std_iter = stdin_iter_py2
+        else:
+            std_iter = stdin_iter_py3
+
+        for value in std_iter():
             plot.append(value)
             max_y, max_x = curses_context.stdscr.getmaxyx()
             plot.draw(max_x, max_y)
-            time.sleep(0.1)
 
 
 def run():
