@@ -49,33 +49,33 @@ class CursesContext:
         return curses.getsyx()[1]
 
 
+DrawSettings = collections.namedtuple(
+    'DrawSettings',
+    (
+        'values',
+        'width',
+        'height',
+        'min_value',
+        'current_value',
+        'max_value',
+        'avg_value',
+    ),
+)
+
+
 class PlotWidget:
     STATS_FLOAT_FORMAT = r'{:6.2f} '
     STATS_INT_FORMAT = r'{:6d}    '
 
-    def __init__(
-            self,
-            stdscr,
-            color,
-            symbol,
-            symbol_size,
-            scale,
-            fixed_min,
-            fixed_max,
-            direction,
-    ):
+    def __init__(self, stdscr, settings):
         self.stdscr = stdscr
         self._queue = collections.deque(maxlen=1000)
-        self.color = curses.color_pair(color)
-        self.symbol = symbol
-        self.symbol_size = symbol_size
-        self.scale = scale
+        self.plot_color = curses.color_pair(settings.color)
+        self.ui_color = curses.color_pair(0)
+        self.settings = settings
         self.min_value = None
         self.max_value = None
-        self.fixed_min = fixed_min
-        self.fixed_max = fixed_max
         self.is_natural = True
-        self.direction = direction
 
     def append(self, value):
         if self.is_natural:
@@ -97,70 +97,94 @@ class PlotWidget:
             return
         current_value = values[0]
 
-        if self.scale == 'window':
+        if self.settings.scale == 'window':
             min_value, max_value = min(values), max(values)
         else:
             min_value, max_value = self.min_value, self.max_value
-
-        self.add_plot(values, width, height, min_value, max_value)
-        self.add_stats(
-            values, width, height, min_value, current_value, max_value,
+        settings = DrawSettings(
+            values=values,
+            width=width,
+            height=height,
+            min_value=min_value,
+            current_value=current_value,
+            max_value=max_value,
+            avg_value=sum(values) / float(len(values))
         )
+
+        bottom = height - 1
+        if self.settings.title:
+            self.add_title(settings)
+            top = 1
+        else:
+            top = 0
+        self.add_plot(settings, top, bottom)
+        self.add_stats(settings)
         self.stdscr.refresh()
 
-    def add_plot(self, values, width, height, min_value, max_value):
-        if self.fixed_min is not None:
-            min_value = self.fixed_min
-        if self.fixed_max is not None:
-            max_value = self.fixed_max
+    def add_title(self, settings):
+        fmt = '{{:^{}}}'.format(settings.width)
+        title = fmt.format(self.settings.title)
+        self.add_str(0, 0, title, self.ui_color)
+
+    def add_plot(self, settings, top, bottom):
+        if self.settings.min is not None:
+            min_value = self.settings.min
+        else:
+            min_value = settings.min_value
+        if self.settings.max is not None:
+            max_value = self.settings.max
+        else:
+            max_value = settings.max_value
+        height = bottom - top
 
         if max_value == min_value:
             # draw middle value
             height_k = height
-            values = [0.5] * len(values)
+            values = [0.5] * len(settings.values)
         else:
             height_k = height / (max_value - min_value)
+            values = settings.values
 
         for x, value in enumerate(values):
-            x *= self.symbol_size
-            if self.direction == 'left':
-                x = width - x
+            x *= self.settings.symbol_size
+            if self.settings.direction == 'left':
+                x = settings.width - x
             value = int((value - min_value) * height_k)
             value = height - value
             for y in range(0, value):
-                self.clear_char(x, y)
+                self.clear_char(x, y + top)
             for y in range(value, height + 1):
-                self.add_str(x, y, self.symbol, self.color)
+                self.add_str(x, y + top, self.settings.symbol, self.plot_color)
 
-    def add_stats(self, values, width, height, min_value, current_value, max_value):
+    def add_stats(self, settings):
         if self.is_natural:
             stats_format = self.STATS_INT_FORMAT
-            max_value = int(max_value)
-            current_value = int(current_value)
-            min_value = int(min_value)
+            max_value = int(settings.max_value)
+            current_value = int(settings.current_value)
+            min_value = int(settings.min_value)
         else:
             stats_format = self.STATS_FLOAT_FORMAT
-        if values:
-            avg_value = sum(values) / float(len(values))
-        else:
-            avg_value = None
+            max_value = settings.max_value
+            current_value = settings.current_value
+            min_value = settings.min_value
         stats_box = [
             (' Max: ' + stats_format).format(max_value),
             (' Cur: ' + stats_format).format(current_value),
             (' Min: ' + stats_format).format(min_value),
+            (' Avg: ' + self.STATS_FLOAT_FORMAT).format(settings.avg_value),
         ]
-        if avg_value is not None:
-            stats_box.append(
-                (' Avg: ' + self.STATS_FLOAT_FORMAT).format(avg_value)
-            )
-        offset_x = int((width - max(len(line) for line in stats_box)) / 2)
-        offset_y = int((height - len(stats_box)) / 2)
+        offset_x = int(
+            (settings.width - max(len(line) for line in stats_box)) / 2
+        )
+        offset_y = int(
+            (settings.height - len(stats_box)) / 2
+        )
         for y, line in enumerate(stats_box):
-            self.add_str(offset_x, offset_y + y, line, curses.color_pair(0))
+            self.add_str(offset_x, offset_y + y, line, self.ui_color)
 
     def clear_char(self, x, y):
         try:
-            self.stdscr.addstr(y, x, ' ' * self.symbol_size)
+            self.stdscr.addstr(y, x, ' ' * self.settings.symbol_size)
         except curses.error:
             pass
 
@@ -177,10 +201,26 @@ def perfect_symbol(char):
     return char
 
 
+Settings = collections.namedtuple(
+    'Settings',
+    (
+        'title',
+        'color',
+        'symbol',
+        'symbol_size',
+        'scale',
+        'min',
+        'max',
+        'direction',
+    ),
+)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Displays a graph based on data from the pipe.'
     )
+    parser.add_argument('--title')
     parser.add_argument('--color', default=2, type=int)
     parser.add_argument('--symbol', default='█', type=perfect_symbol)
     parser.add_argument('--scale', default='all', choices=['all', 'window'])
@@ -225,16 +265,17 @@ def main(args):
 
     with CursesContext() as curses_context:
         symbol_size = curses_context.get_symbol_size(args.symbol)
-        plot = PlotWidget(
-            curses_context.stdscr,
-            args.color,
-            args.symbol,
-            symbol_size,
-            args.scale,
-            args.min,
-            args.max,
-            args.direction,
+        settings = Settings(
+            title=args.title,
+            color=args.color,
+            symbol=args.symbol,
+            symbol_size=symbol_size,
+            scale=args.scale,
+            min=args.min,
+            max=args.max,
+            direction=args.direction,
         )
+        plot = PlotWidget(curses_context.stdscr, settings)
 
         if sys.version_info.major == 2:
             std_iter = stdin_iter_py2
