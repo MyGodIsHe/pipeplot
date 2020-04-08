@@ -50,8 +50,8 @@ class CursesContext:
 
 
 class PlotWidget:
-    STATS_FLOAT_FORMAT = r'{:6.2f}'
-    STATS_INT_FORMAT = r'{:6d}'
+    STATS_FLOAT_FORMAT = r'{:6.2f} '
+    STATS_INT_FORMAT = r'{:6d}    '
 
     def __init__(
             self,
@@ -103,7 +103,9 @@ class PlotWidget:
             min_value, max_value = self.min_value, self.max_value
 
         self.add_plot(values, width, height, min_value, max_value)
-        self.add_stats(width, height, min_value, current_value, max_value)
+        self.add_stats(
+            values, width, height, min_value, current_value, max_value,
+        )
         self.stdscr.refresh()
 
     def add_plot(self, values, width, height, min_value, max_value):
@@ -130,7 +132,7 @@ class PlotWidget:
             for y in range(value, height + 1):
                 self.add_str(x, y, self.symbol, self.color)
 
-    def add_stats(self, width, height, min_value, current_value, max_value):
+    def add_stats(self, values, width, height, min_value, current_value, max_value):
         if self.is_natural:
             stats_format = self.STATS_INT_FORMAT
             max_value = int(max_value)
@@ -138,11 +140,19 @@ class PlotWidget:
             min_value = int(min_value)
         else:
             stats_format = self.STATS_FLOAT_FORMAT
+        if values:
+            avg_value = sum(values) / float(len(values))
+        else:
+            avg_value = None
         stats_box = [
-            ('Max: ' + stats_format).format(max_value),
-            ('Cur: ' + stats_format).format(current_value),
-            ('Min: ' + stats_format).format(min_value),
+            (' Max: ' + stats_format).format(max_value),
+            (' Cur: ' + stats_format).format(current_value),
+            (' Min: ' + stats_format).format(min_value),
         ]
+        if avg_value is not None:
+            stats_box.append(
+                (' Avg: ' + self.STATS_FLOAT_FORMAT).format(avg_value)
+            )
         offset_x = int((width - max(len(line) for line in stats_box)) / 2)
         offset_y = int((height - len(stats_box)) / 2)
         for y, line in enumerate(stats_box):
